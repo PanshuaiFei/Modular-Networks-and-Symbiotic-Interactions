@@ -1,0 +1,75 @@
+
+rm(list = ls())
+setwd("C:/Users/feips/Desktop/新挑选微生物组22个/新挑选微生物组22个/pre15/total")#修改为自己的R工作目录，需要保证读取的数据表在该目录
+res_raw <- read.delim('median_correlation.tsv',row.names=1,sep='\t',check.names=FALSE)
+res <- as.matrix(res_raw)
+p_raw <- read.delim('pvalues.tsv',row.names=1,sep='\t',check.names=FALSE)
+p <- as.matrix(p_raw)
+
+
+#绘图
+library(corrplot)#加载corrplot包
+#help(corrplot)#运行help(corrplot)命令可查看corrplot函数各项参数的含义，进行个性化参数设置
+library(RColorBrewer)#用RColorBrewer提供配色方案
+coul = colorRampPalette(c("#55aeda","white","#fa6464"))(200)#这里可以自己改颜色
+
+#保存为图高6.5 inch,宽5 inch的pdf,字体Times New Roman，method为:椭圆展示。如果想用矩形，将ellipse改为square即可
+pdf(height=6.5, width=5,family='serif', bg = "white",file = "correlation_heatmap.pdf")#设置导出的图的高度、宽度、字体、背景色、格式
+corrplot(res,col= coul,order = "original",method = "square",type = 'lower',tl.cex= 0.9,tl.col ="black",tl.srt = 45, cl.align.text = "l", cl.length = 7, cl.ratio = 0.3, cl.cex = 0.9, p.mat = p, insig="label_sig", sig.level = c(0.001,0.01,0.05),pch.cex = 0.5,mar = c(0.5,0.2,0.2,0.2))
+dev.off()
+
+####################################################
+library(circlize)
+
+# 假设res是相关性矩阵
+res_raw <- read.delim('median_correlation.tsv', row.names = 1, sep = '\t', check.names = FALSE)
+res <- as.matrix(res_raw)
+
+# 将相关性矩阵转换为边列表
+net <- as.data.frame(as.table(res))
+colnames(net) <- c("from", "to", "value")
+
+# 过滤掉自相关和低相关性的边
+#threshold <- 0.5  # 设置相关性阈值
+#不过滤
+threshold <- 0
+net <- subset(net, from != to & abs(value) > threshold)
+
+# 设置颜色
+set1_colors <- RColorBrewer::brewer.pal(n = 9, name = "Set1")
+set3_colors <- RColorBrewer::brewer.pal(n = 12, name = "Set3")
+
+# 结合两个颜色主题
+mycolor <- c(set1_colors, set3_colors)
+
+
+
+#mycolor <- RColorBrewer::brewer.pal(n = 15, name = "Set1")
+names(mycolor) <- unique(c(net$from, net$to))
+
+###有箭头方向
+# 设置要保存的 PDF 文件的路径和文件名
+pdf_file <- "chord_diagram.pdf"
+
+# 开始绘制 PDF
+pdf(pdf_file, width = 10, height = 8)  # 设置 PDF 尺寸，根据需要调整宽度和高度
+
+# 绘制弦图
+chordDiagram(
+  x = net,
+  grid.col = mycolor,
+  directional = 1,
+  direction.type = c("arrows", "diffHeight"),
+  diffHeight = -0.01,
+  annotationTrack = c("name", "grid", "axis"),
+  annotationTrackHeight = c(0.05, 0.08),
+  link.arr.type = "big.arrow",
+  link.sort = TRUE,
+  link.largest.ontop = TRUE,
+  transparency = 0.25
+)
+
+# 结束绘制 PDF
+dev.off()
+
+
